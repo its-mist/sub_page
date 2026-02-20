@@ -38,6 +38,7 @@ nano .env
 | `SUB_DOMAIN` | Домен страницы подписки | `sub.example.com` |
 | `CERTBOT_EMAIL` | Email для уведомлений Let's Encrypt (необязательно) | `admin@example.com` |
 | `PANEL_URL` | Публичный URL панели Remnawave | `https://panel.example.com` |
+| `REMNAWAVE_API_TOKEN` | API-токен из панели (Dashboard → Settings → API Tokens) | |
 | `APP_PORT` | Внутренний порт (по умолчанию 3010) | `3010` |
 | `META_TITLE` | Заголовок страницы | `Remnawave Subscription` |
 | `META_DESCRIPTION` | Описание страницы | `page` |
