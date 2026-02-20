@@ -1,117 +1,117 @@
 # Remnawave Subscription Page
 
-Standalone deployment of the Remnawave subscription page on a separate server.
+Развёртывание страницы подписки Remnawave на отдельном сервере.
 
-## Requirements
+## Требования
 
-- Clean server with Ubuntu 22.04+
-- Docker and Docker Compose
-- Domain with DNS A-record pointing to the server IP
+- Чистый сервер с Ubuntu 22.04+
+- Docker и Docker Compose
+- Домен с A-записью, указывающей на IP сервера
 
-## Deployment
+## Развёртывание
 
-### 1. Install Docker
+### 1. Установить Docker
 
 ```bash
 curl -fsSL https://get.docker.com | sh
 ```
 
-### 2. Clone the repo
+### 2. Клонировать репозиторий
 
 ```bash
 git clone <repo-url> /opt/sub_page
 cd /opt/sub_page
 ```
 
-### 3. Configure environment
+### 3. Настроить переменные окружения
 
 ```bash
 cp .env.example .env
 nano .env
 ```
 
-Set your values:
+Заполнить значения:
 
-| Variable | Description | Example |
+| Переменная | Описание | Пример |
 |---|---|---|
-| `SUB_DOMAIN` | Domain for subscription page | `sub.example.com` |
-| `PANEL_URL` | Public URL of the Remnawave panel | `https://panel.example.com` |
-| `APP_PORT` | Internal port (default 3010) | `3010` |
-| `META_TITLE` | Page title | `Remnawave Subscription` |
-| `META_DESCRIPTION` | Page description | `page` |
+| `SUB_DOMAIN` | Домен страницы подписки | `sub.example.com` |
+| `PANEL_URL` | Публичный URL панели Remnawave | `https://panel.example.com` |
+| `APP_PORT` | Внутренний порт (по умолчанию 3010) | `3010` |
+| `META_TITLE` | Заголовок страницы | `Remnawave Subscription` |
+| `META_DESCRIPTION` | Описание страницы | `page` |
 
-### 4. Install Nginx and get SSL certificate
+### 4. Установить Nginx и получить SSL-сертификат
 
 ```bash
 apt install -y nginx certbot python3-certbot-nginx
 
-# Get certificate (DNS must already point to this server)
-certbot certonly --standalone -d YOUR_DOMAIN
+# Получить сертификат (DNS уже должен указывать на этот сервер)
+certbot certonly --standalone -d ВАШ_ДОМЕН
 ```
 
-### 5. Configure Nginx
+### 5. Настроить Nginx
 
 ```bash
-# Copy and edit the example config
+# Скопировать шаблон конфига
 cp nginx.conf.example /etc/nginx/sites-available/sub_page
 
-# Replace SUB_DOMAIN with your actual domain
-sed -i 's/SUB_DOMAIN/YOUR_DOMAIN/g' /etc/nginx/sites-available/sub_page
+# Заменить SUB_DOMAIN на ваш домен
+sed -i 's/SUB_DOMAIN/ВАШ_ДОМЕН/g' /etc/nginx/sites-available/sub_page
 
-# Enable the site
+# Включить сайт
 ln -s /etc/nginx/sites-available/sub_page /etc/nginx/sites-enabled/
 
-# Remove default site if it conflicts
+# Удалить дефолтный сайт если мешает
 rm -f /etc/nginx/sites-enabled/default
 
-# Test and reload
+# Проверить конфиг и перезагрузить
 nginx -t && systemctl reload nginx
 ```
 
-### 6. Start the service
+### 6. Запустить сервис
 
 ```bash
 docker compose up -d
 ```
 
-### 7. Verify
+### 7. Проверить
 
 ```bash
-# Check container is running
+# Статус контейнера
 docker compose ps
 
-# Check logs
+# Логи
 docker compose logs -f
 
-# Test HTTPS
-curl -I https://YOUR_DOMAIN
+# Проверить HTTPS
+curl -I https://ВАШ_ДОМЕН
 ```
 
-## What to change on the panel server
+## Что изменить на сервере с панелью
 
-On the server where Remnawave panel is running, update the `.env` file to point subscriptions to the new domain:
+На сервере, где установлена панель Remnawave, обновить `.env`, чтобы ссылки подписок вели на новый домен:
 
 ```bash
-# Edit /opt/remnawave/.env (or wherever your panel is installed)
-# Change this line:
-SUB_PUBLIC_DOMAIN=sub.new-domain.com
+# Отредактировать /opt/remnawave/.env
+# Изменить строку:
+SUB_PUBLIC_DOMAIN=sub.новый-домен.com
 
-# Then restart the backend:
+# Перезапустить бэкенд:
 cd /opt/remnawave
 docker compose restart remnawave
 ```
 
-This ensures the panel generates subscription links with the new domain.
+После этого панель будет генерировать ссылки подписок с новым доменом.
 
-## Auto-renew SSL
+## Автопродление SSL
 
-Certbot sets up auto-renewal automatically. Verify with:
+Certbot настраивает автопродление автоматически. Проверить:
 
 ```bash
 certbot renew --dry-run
 ```
 
-## Update
+## Обновление
 
 ```bash
 docker compose pull
