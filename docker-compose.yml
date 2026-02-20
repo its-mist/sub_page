@@ -1,0 +1,22 @@
+services:
+  remnawave-subscription-page:
+    image: remnawave/subscription-page:latest
+    container_name: remnawave-subscription-page
+    hostname: remnawave-subscription-page
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./app-config.json:/opt/app/frontend/assets/app-config.json
+    environment:
+      - REMNAWAVE_PANEL_URL=${PANEL_URL}
+      - APP_PORT=${APP_PORT:-3010}
+      - META_TITLE=${META_TITLE:-Remnawave Subscription}
+      - META_DESCRIPTION=${META_DESCRIPTION:-page}
+    ports:
+      - '127.0.0.1:3010:3010'
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '30m'
+        max-file: '5'
