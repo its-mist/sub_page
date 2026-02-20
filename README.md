@@ -68,6 +68,49 @@ docker compose logs -f
 
 ## Что изменить на сервере с панелью
 
+### Открыть доступ к API для subscription page
+
+Если nginx панели защищён cookie/query-авторизацией (возвращает 444 на все запросы без секретного параметра), subscription page не сможет подключиться к панели — её запросы к `/api/system/metadata` будут блокироваться.
+
+Нужно добавить `location /api/` **перед** основным `location /` в конфиге nginx панели (`/opt/remnawave/nginx.conf`):
+
+```nginx
+server {
+    server_name panel.example.com;
+    # ...
+
+    location /api/ {
+        proxy_http_version 1.1;
+        proxy_pass http://remnawave;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    location / {
+        if ($authorized = 0) {
+            return 444;
+        }
+        # ... остальная конфигурация
+    }
+}
+```
+
+После изменения перезагрузить nginx:
+
+```bash
+docker exec remnawave-nginx nginx -s reload
+```
+
+API защищено токеном (`REMNAWAVE_API_TOKEN`), поэтому открытие `/api/` безопасно.
+
+### Обновить домен подписок
+
 На сервере, где установлена панель Remnawave, обновить `.env`, чтобы ссылки подписок вели на новый домен:
 
 ```bash

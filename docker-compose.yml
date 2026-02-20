@@ -44,7 +44,7 @@ services:
         max-file: '5'
 
   remnawave-subscription-page:
-    image: remnawave/subscription-page:latest
+    image: remnawave/subscription-page:6.0.8
     container_name: remnawave-subscription-page
     restart: always
     volumes:
