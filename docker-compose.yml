@@ -1,11 +1,52 @@
 services:
+  certbot:
+    image: certbot/certbot:latest
+    container_name: certbot
+    volumes:
+      - certs:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+      - ./scripts/init-certs.sh:/init-certs.sh:ro
+    entrypoint: /bin/sh
+    command: /init-certs.sh
+    environment:
+      - SUB_DOMAIN=${SUB_DOMAIN}
+      - CERTBOT_EMAIL=${CERTBOT_EMAIL:-}
+    ports:
+      - '80:80'
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - certs:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    environment:
+      - SUB_DOMAIN=${SUB_DOMAIN}
+    ports:
+      - '443:443'
+      - '80:80'
+    depends_on:
+      certbot:
+        condition: service_completed_successfully
+      remnawave-subscription-page:
+        condition: service_started
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '30m'
+        max-file: '5'
+
   remnawave-subscription-page:
     image: remnawave/subscription-page:latest
     container_name: remnawave-subscription-page
-    hostname: remnawave-subscription-page
     restart: always
-    env_file:
-      - .env
     volumes:
       - ./app-config.json:/opt/app/frontend/assets/app-config.json
     environment:
@@ -13,10 +54,16 @@ services:
       - APP_PORT=${APP_PORT:-3010}
       - META_TITLE=${META_TITLE:-Remnawave Subscription}
       - META_DESCRIPTION=${META_DESCRIPTION:-page}
-    ports:
-      - '127.0.0.1:3010:3010'
+    expose:
+      - '3010'
     logging:
       driver: 'json-file'
       options:
         max-size: '30m'
         max-file: '5'
+
+volumes:
+  certs:
+    driver: local
+  certbot-www:
+    driver: local

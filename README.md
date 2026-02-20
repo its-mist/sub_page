@@ -1,12 +1,13 @@
 # Remnawave Subscription Page
 
-Развёртывание страницы подписки Remnawave на отдельном сервере.
+Развёртывание страницы подписки Remnawave на отдельном сервере. SSL-сертификаты получаются автоматически через Let's Encrypt.
 
 ## Требования
 
 - Чистый сервер с Ubuntu 22.04+
 - Docker и Docker Compose
 - Домен с A-записью, указывающей на IP сервера
+- Свободные порты 80 и 443
 
 ## Развёртывание
 
@@ -35,56 +36,28 @@ nano .env
 | Переменная | Описание | Пример |
 |---|---|---|
 | `SUB_DOMAIN` | Домен страницы подписки | `sub.example.com` |
+| `CERTBOT_EMAIL` | Email для уведомлений Let's Encrypt (необязательно) | `admin@example.com` |
 | `PANEL_URL` | Публичный URL панели Remnawave | `https://panel.example.com` |
 | `APP_PORT` | Внутренний порт (по умолчанию 3010) | `3010` |
 | `META_TITLE` | Заголовок страницы | `Remnawave Subscription` |
 | `META_DESCRIPTION` | Описание страницы | `page` |
 
-### 4. Установить Nginx и получить SSL-сертификат
-
-```bash
-apt install -y nginx certbot python3-certbot-nginx
-
-# Получить сертификат (DNS уже должен указывать на этот сервер)
-certbot certonly --standalone -d ВАШ_ДОМЕН
-```
-
-### 5. Настроить Nginx
-
-```bash
-# Скопировать шаблон конфига
-cp nginx.conf.example /etc/nginx/sites-available/sub_page
-
-# Заменить SUB_DOMAIN на ваш домен
-sed -i 's/SUB_DOMAIN/ВАШ_ДОМЕН/g' /etc/nginx/sites-available/sub_page
-
-# Включить сайт
-ln -s /etc/nginx/sites-available/sub_page /etc/nginx/sites-enabled/
-
-# Удалить дефолтный сайт если мешает
-rm -f /etc/nginx/sites-enabled/default
-
-# Проверить конфиг и перезагрузить
-nginx -t && systemctl reload nginx
-```
-
-### 6. Запустить сервис
+### 4. Запустить
 
 ```bash
 docker compose up -d
 ```
 
-### 7. Проверить
+При первом запуске:
+1. Контейнер `certbot` автоматически получит SSL-сертификат
+2. После этого запустится `nginx` с HTTPS
+3. Страница подписки будет доступна по `https://ВАШ_ДОМЕН`
+
+### 5. Проверить
 
 ```bash
-# Статус контейнера
 docker compose ps
-
-# Логи
 docker compose logs -f
-
-# Проверить HTTPS
-curl -I https://ВАШ_ДОМЕН
 ```
 
 ## Что изменить на сервере с панелью
@@ -103,12 +76,21 @@ docker compose restart remnawave
 
 После этого панель будет генерировать ссылки подписок с новым доменом.
 
-## Автопродление SSL
+## Продление сертификата
 
-Certbot настраивает автопродление автоматически. Проверить:
+Сертификаты Let's Encrypt действуют 90 дней. Для продления:
 
 ```bash
-certbot renew --dry-run
+cd /opt/sub_page
+./scripts/renew-certs.sh
+```
+
+Или добавить в crontab для автопродления:
+
+```bash
+crontab -e
+# Добавить строку:
+0 3 1 */2 * cd /opt/sub_page && ./scripts/renew-certs.sh >> /var/log/certbot-renew.log 2>&1
 ```
 
 ## Обновление
