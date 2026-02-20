@@ -53,8 +53,8 @@ services:
       - REMNAWAVE_PANEL_URL=${PANEL_URL}
       - REMNAWAVE_API_TOKEN=${REMNAWAVE_API_TOKEN}
       - APP_PORT=${APP_PORT:-3010}
-      - META_TITLE=${META_TITLE:-Remnawave Subscription}
-      - META_DESCRIPTION=${META_DESCRIPTION:-page}
+      - META_TITLE=${META_TITLE:-Mist VPN — Подписка}
+      - META_DESCRIPTION=${META_DESCRIPTION:-Страница подписки Mist VPN}
     expose:
       - '3010'
     logging:
